@@ -18,38 +18,6 @@ class HeterogeneousInvertedEmbedding(nn.Module):
         tokens = [self.var_embeds[i](x_enc[:, :, i]) for i in range(N)]
         return self.dropout(torch.stack(tokens, dim=1))  # [B, N, d_model]
 
-class SharedEmbeddingWithID(nn.Module):
-    def __init__(self, seq_len, d_model, n_vars, dropout=0.1):
-        super().__init__()
-
-        # 输入时间序列 x 用这个线性层投影
-        self.value_embed = nn.Linear(seq_len, d_model)
-
-        # 变量编号 0~N-1 用这个 Embedding 查表
-        self.channel_id_embed = nn.Embedding(n_vars, d_model)
-
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x_enc):
-        # x_enc: [B, L, N]
-        B, L, N = x_enc.shape
-
-        x = x_enc.permute(0, 2, 1)  # [B, N, L]
-
-        # 浮点输入给 Linear
-        token_embed = self.value_embed(x)  # [B, N, d_model]
-
-        # 整数编号给 Embedding
-        channel_ids = torch.arange(
-            N, device=x_enc.device, dtype=torch.long
-        )
-
-        id_embed = self.channel_id_embed(channel_ids).unsqueeze(0)
-        # [1, N, d_model]
-
-        return self.dropout(token_embed + id_embed)
-
-
 class Model(nn.Module):
 
     def __init__(self, configs):
@@ -60,13 +28,10 @@ class Model(nn.Module):
         self.n_vars = getattr(configs, "enc_in", 6)
 
         self.output_attention = False
-        #
+        
         self.enc_embedding = HeterogeneousInvertedEmbedding(
             configs.seq_len, configs.d_model, self.n_vars, configs.dropout
         )
-        # self.enc_embedding = SharedEmbeddingWithID(
-        #     configs.seq_len, configs.d_model, self.n_vars, configs.dropout
-        # )
 
         self.encoder = Encoder(
             [

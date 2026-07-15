@@ -1,11 +1,6 @@
 export CUDA_VISIBLE_DEVICES=0
-cd /home/zhao/fu/Time-Series-Library-main/
 model_name=DLinear
 pred_len=96
-#for  pred_len in  192  720
-#for  pred_len in  96  192  336  720
-# do
-
 
 python -u run.py \
   --task_name long_term_forecast \
@@ -30,7 +25,6 @@ python -u run.py \
   --des 'Exp' \
   --itr 1
 
-#  done
 
 #python -u run.py \
 #  --task_name long_term_forecast \
